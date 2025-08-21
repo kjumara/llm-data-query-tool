@@ -29,6 +29,10 @@ cd [project-name]
 # Install dependencies
 pip install -r requirements.txt
 
+# Set up environment variables
+# 1. Copy .env.example to .env in the project root
+# 2. Replace "your_key_here" with your OpenAI API key
+
 # Run app or script
 streamlit run [app.py]
 ```
