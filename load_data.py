@@ -61,37 +61,45 @@ def query_data(
 def summarize_data(df: pd.DataFrame) -> None:
     """
     Print key insights from the filtered dataset
-
-    Args: df: pd.DataFrame: The filtered dataset.
+    Handles missing columns gracefully.
     """
     if df.empty:
         print("No data available for the selected filters.")
         return
 
-    # Ensure ORDERDATE is datetime for proper summarization
     df_sum = df.copy()
-    df_sum['ORDERDATE'] = pd.to_datetime(df_sum['ORDERDATE'], errors='coerce')
-    df_sum = df_sum.dropna(subset=['ORDERDATE'])
 
-    total_sales = (df_sum['SALES'].sum() if 'SALES' in df_sum.columns else None)
-    unique_customers = (df_sum['CUSTOMERNAME'].nunique() if 'CUSTOMERNAME' in df_sum.columns else None)
-    date_min = df_sum['ORDERDATE'].min().strftime('%Y-%m-%d')
-    date_max = df_sum['ORDERDATE'].max().strftime('%Y-%m-%d')
+    #ORDERDATE summary
+    if "ORDERDATE" in df.columns:
+        df_sum['ORDERDATE'] = pd.to_datetime(df_sum['ORDERDATE'], errors='coerce')
+        df_sum = df_sum.dropna(subset=['ORDERDATE'])
 
-    print("\nSummary Insights:")
-    if total_sales is not None:
-        print(f"- Total sales: ${total_sales:,.2f}")
-    if unique_customers is not None:
-        print(f"- Unique customers: ${unique_customers}")
-    print(f"- Date Range: {date_min} to {date_max}")
+        date_min = df_sum['ORDERDATE'].min().strftime('%Y-%m-%d')
+        date_max = df_sum['ORDERDATE'].max().strftime('%Y-%m-%d')
+        print(f"- Date Range: {date_min} to {date_max}")
 
-    if 'PRODUCTCODE' in df_sum.columns and 'SALES' in df_sum.columns:
+    # Total Sales
+    if "SALES" in df_sum.columns:
+        total_sales = df_sum['SALES'].sum()
+        print(f"- Total Sales: ${total_sales:,.2f}")
+
+    # Unique Customers
+    if "CUSTOMERNAME" in df_sum.columns:
+        unique_customers = df_sum["CUSTOMERNAME"].nunique()
+        print(f"- Unique Customers: {unique_customers}")
+
+    # Top Products
+    if "PRODUCTCODE" in df_sum.columns and "SALES" in df_sum.columns:
         top_products = (
-            df_sum.groupby('PRODUCTCODE')['SALES'].sum().sort_values(ascending=False).head(5)
+            df_sum.groupby("PRODUCTCODE")["SALES"].sum()
+            .sort_values(ascending=False)
+            .head(5)
         )
-    print(f"Top 5 Products by Sales:")
-    for product_code, sales in top_products.items():
-        print(f"- {product_code}: ${sales:.2f}")
+
+        print("Top 5 Products by Sales")
+        print("--------")
+        for product_code, sales in top_products.items():
+            print(f"- {product_code}: ${sales:.2f}")
 
 if __name__ == "__main__":
     file = "sales_data_sample.csv"
