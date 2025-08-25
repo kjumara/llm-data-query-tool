@@ -12,6 +12,7 @@ from load_data import load_data, summarize_data
 from config import api_key
 from openai import OpenAI
 import pandas as pd
+from plot_utils import auto_chart
 
 # load dataset using load_data.py
 df = load_data("sales_data_sample.csv")
@@ -61,3 +62,7 @@ print("\n--- Query Results ---")
 print(df_prompted.head())
 print("\n--- Summary Results ---")
 summary = summarize_data(df_prompted)
+
+# Auto-generate chart for numeric data
+print("\n--- Auto-generated Chart ---")
+auto_chart(df_prompted, save_path="latest_query_chart.png")
