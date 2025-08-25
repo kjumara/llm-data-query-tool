@@ -7,24 +7,43 @@ Application Script to:
 
 Intended as main entry point for the LLM-Powered Data Query Tool project
 """
+from fontTools.misc.cython import returns
 
-from load_data import load_data, summarize_data
-from config import api_key
-from openai import OpenAI
+from load_data import load_data # File to Load Data
+from config import api_key # loads from .env via config
+from plot_utils import auto_chart # returns matplotlib chart
+
 import pandas as pd
-from plot_utils import auto_chart
+from openai import OpenAI
+import streamlit as st
+
+# Application Title
+st.title("AI-Powered Data Q&A")
 
 # load dataset using load_data.py
 df = load_data("sales_data_sample.csv")
+st.write("Using Default Sample Dataset")
+st.write(df.head())
+
 
 # Initialize OpenAI client
 client = OpenAI(api_key=api_key)
 
 # Implement user query
-user_question = input("Enter your question about the dataset: ")
+st.markdown(
+    """
+    💡 **Try asking questions like:**
+    - What were total sales by year?
+    - Show me sales by product line.
+    - What were the top 5 bestselling product lines in 2003?
+    """
+)
+user_question = st.text_input("Ask a question about the dataset: ")
 
-# Build schema string to feed into LLM
-df_schema = str(df.dtypes)
+# Create placeholders to update after question
+answer_placeholder = st.empty()
+chart_placeholder = st.empty()
+table_placeholder = st.empty()
 
 # Function to send question to LLM and get a Pandas query string
 def question_to_query(user_question, df_schema):
@@ -48,21 +67,30 @@ def question_to_query(user_question, df_schema):
                                                                               "content": prompt}], max_tokens=200)
     return response.choices[0].message.content.strip()
 
-# Run LLM-generated query in Pandas
-query_str = question_to_query(user_question, df_schema)
-print(query_str)
-df_prompted = pd.DataFrame()
+if user_question:
+    # Build schema string to feed into LLM
+    df_schema = df.dtypes.astype(str).to_dict()
+    try:
+        # Run LLM-generated query in Pandas
+        query_str = question_to_query(user_question, df_schema)
+    except Exception as e:
+        st.error(f"Failed to generate a query: {e}")
 try:
+    df_prompted = pd.DataFrame()
     df_prompted = eval(query_str, {"df": df, "pd": pd})
 except Exception as e:
-    print(f"Error executing query: {e}")
+    st.warning(f"Could not execute the generated query: {e}")
 
-# Show results
-print("\n--- Query Results ---")
-print(df_prompted.head())
-print("\n--- Summary Results ---")
-summary = summarize_data(df_prompted)
+if df_prompted.empty:
+    st.info("Query returned no results. Try rephrasing your question.")
+else:
+    # Show AI generated answer text
+    answer_placeholder.write(f"**Answer:** I ran the query:\n{query_str}\n)")
 
-# Auto-generate chart for numeric data
-print("\n--- Auto-generated Chart ---")
-auto_chart(df_prompted, save_path="latest_query_chart.png")
+    #create chart
+    fig = auto_chart(df_prompted)
+    if fig:
+        chart_placeholder.pyplot(fig)
+
+    #show table
+    table_placeholder.dataframe(df_prompted)
