@@ -7,9 +7,8 @@ Application Script to:
 
 Intended as main entry point for the LLM-Powered Data Query Tool project
 """
-from fontTools.misc.cython import returns
 
-from load_data import load_data # File to Load Data
+from load_data import load_data
 from config import api_key # loads from .env via config
 from plot_utils import auto_chart # returns matplotlib chart
 
@@ -75,22 +74,22 @@ if user_question:
         query_str = question_to_query(user_question, df_schema)
     except Exception as e:
         st.error(f"Failed to generate a query: {e}")
-try:
-    df_prompted = pd.DataFrame()
-    df_prompted = eval(query_str, {"df": df, "pd": pd})
-except Exception as e:
-    st.warning(f"Could not execute the generated query: {e}")
+    try:
+        df_prompted = pd.DataFrame()
+        df_prompted = eval(query_str, {"df": df, "pd": pd})
+    except Exception as e:
+        st.warning(f"Could not execute the generated query: {e}")
 
-if df_prompted.empty:
-    st.info("Query returned no results. Try rephrasing your question.")
-else:
-    # Show AI generated answer text
-    answer_placeholder.write(f"**Answer:** I ran the query:\n{query_str}\n)")
+    if df_prompted.empty:
+        st.info("Query returned no results. Try rephrasing your question.")
+    else:
+        # Show AI generated answer text
+        answer_placeholder.write(f"**Answer:** I ran the query:\n{query_str}\n)")
 
-    #create chart
-    fig = auto_chart(df_prompted)
-    if fig:
-        chart_placeholder.pyplot(fig)
+        #create chart
+        fig = auto_chart(df_prompted)
+        if fig:
+            chart_placeholder.pyplot(fig)
 
-    #show table
-    table_placeholder.dataframe(df_prompted)
+        #show table
+        table_placeholder.dataframe(df_prompted)

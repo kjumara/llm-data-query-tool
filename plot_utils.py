@@ -62,8 +62,3 @@ def auto_chart(df, save_path: str=None):
     ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{int(x):,}"))
 
     return fig
-
-if __name__ == "__main__":
-    df = load_data("sales_data_sample.csv")
-    df_smaller = df.groupby('YEAR_ID')['SALES'].sum().reset_index()
-    auto_chart(df_smaller, "test")
